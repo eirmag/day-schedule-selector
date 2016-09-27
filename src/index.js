@@ -242,6 +242,42 @@
     });
   };
 
+  DayScheduleSelector.prototype.serializedToCron = function(schedule){
+    var excludes = new Map();
+    $.each(schedule, function(i, d){
+        var stringHour;
+        var stringDay = dayToCronString(i);
+        if (d.length == 0){
+            stringHour = "*";
+        }else{
+            stringHour = '0-';
+            $.each(d, function(j, exclusion){
+                stringHour += (hourToCronHour(exclusion[0])-1) + "," + hourToCronHour(exclusion[1]) + "-";
+            });
+            stringHour += "24";
+        }
+        
+        //put the first part of the cron string in a map to later reduce cronString size
+        var cronString = "0 " + stringHour + " * * ";
+        if (excludes.has(cronString)){
+            excludes.get(cronString).push(i);
+        }else{
+            excludes.set(cronString, [i]);
+        }
+        
+    });
+    
+    var finalString = '';
+    excludes.forEach(function (v, k, m){
+        finalString += k + $.map(v, function (e, _){
+            return dayToCronString(e);
+        }).join(",") + "</br>";
+
+    });
+    
+    return finalString;
+  };
+
   // DayScheduleSelector Plugin Definition
   // =====================================
 
@@ -324,6 +360,27 @@
     return ('0' + Math.floor(minutes / 60)).slice(-2) + ':' +
            ('0' + (minutes % 60)).slice(-2);
   }
+
+    /**
+      * Returns for a given hour
+      * @param{string} e: expect format such as 00:00; 
+      */
+    function hourToCronHour(e){
+        var date = new Date("October 1, 1900 " + e + ":00");
+        return date.getHours()
+    }
+
+    function dayToCronString(e){
+        switch(Number(e)){
+            case 0: return "sun";
+            case 1: return "mon";
+            case 2: return "tue";
+            case 3: return "wed";
+            case 4: return "thu";
+            case 5: return "fri";
+            case 6: return "sat";
+        }
+    }
 
   // Expose some utility functions
   window.DayScheduleSelector = {
