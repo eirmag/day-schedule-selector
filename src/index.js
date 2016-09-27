@@ -20,7 +20,8 @@
                       '<thead class="schedule-header"></thead>' +
                       '<tbody class="schedule-rows"></tbody>'   +
                     '</table>'                                  +
-                  '<div>'
+                  '<div>',
+    horizontalView: false  
   };
 
   /**
@@ -29,9 +30,44 @@
    */
   DayScheduleSelector.prototype.render = function () {
     this.$el.html(this.options.template);
-    this.renderHeader();
-    this.renderRows();
+    if (this.options.horizontalView === true){
+        this.renderHorizontal();
+    }else{
+        this.renderHeader();
+        this.renderRows();
+    }
   };
+
+  /**
+   * Render the calendar header in horizontal mode 
+   * @public
+   */
+  DayScheduleSelector.prototype.renderHorizontal = function () {
+
+    var start = this.options.startTime
+      , end = this.options.endTime
+      , interval = this.options.interval
+      , days = this.options.days
+      , stringDays = this.options.stringDays
+      , html = '';
+
+    var dates = generateDates(start, end, interval);
+    var daysInAHeader = $.map(dates, function (d, i){
+        return '<th class="time-label">' + hmmAmPm(d) + '</th>'; 
+    }).join();
+    this.$el.find('.schedule-header').html('<tr><th></th>' + daysInAHeader + '</tr>');
+    
+    var $el = this.$el.find('.schedule-rows');
+    $.each(days, function (i, day){
+        var dayLabel = stringDays[i] || ''; 
+        var hoursInARow = $.map(dates, function (d, j){
+            var timeLabel = d;
+            return '<td class="time-slot" data-time="' + hhmm(d) + '" data-day="' + day + '"></td>';
+        }).join();
+        $el.append('<tr><td>' + dayLabel + '</td>' + hoursInARow  + '</tr>');
+    });
+
+  }
 
   /**
    * Render the calendar header
@@ -295,3 +331,4 @@
   };
 
 })(jQuery);
+
