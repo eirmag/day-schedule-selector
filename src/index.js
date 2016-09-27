@@ -58,8 +58,8 @@
     this.$el.find('.schedule-header').html('<tr><th></th>' + daysInAHeader + '</tr>');
     
     var $el = this.$el.find('.schedule-rows');
-    $.each(days, function (i, day){
-        var dayLabel = stringDays[i] || ''; 
+    $.each(days, function (_, day){
+        var dayLabel = stringDays[day] || ''; 
         var hoursInARow = $.map(dates, function (d, j){
             var timeLabel = d;
             return '<td class="time-slot" data-time="' + hhmm(d) + '" data-day="' + day + '"></td>';
