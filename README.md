@@ -17,6 +17,7 @@ $("#weekly-schedule").dayScheduleSelector({
   days: [1, 2, 3, 5, 6],
   startTime: '09:50',
   endTime: '21:06',
+  horizontalView: true,
   interval: 15
 });
 ```
@@ -41,6 +42,11 @@ default: `30`
 
 An integer value representing length of each time slot, in minutes.
 
+#### horizontalView
+default: `false`
+
+A boolean value to switch display. Columns are hours, rows are days.
+
 ## Events
 The following custom events are triggered on the element.
 
@@ -50,6 +56,41 @@ Triggered when a selection is made. Passes the event and an array of selected ti
 $("#weekly-schedule").on('selected.artsy.dayScheduleSelector', function (e, selected) {
   /* selected is an array of time slots selected this time. */
 }
+```
+
+## Serialization to cron
+In order to get a cron-like string out of the exclusion array that you can get when serializing a schedule, you can perform the following:
+```javascript
+var data = $("#weekly-schedule").data('artsy.dayScheduleSelector').serialize();
+var cronString = window.DayScheduleSelector.serializedToCron(data);
+```
+
+For instance, for the exclusion list
+```javascript
+var exclusionList = {
+ "0": [],
+ "1": [],
+ "2": [],
+ "3": [
+  [
+   "10:00",
+   "12:00"
+  ]
+ ],
+ "4": [],
+ "5": [
+  [
+   "03:00",
+   "09:00"
+  ]
+ ],
+ "6": []
+}
+```
+
+It gives the corresponding cron string
+```html
+"0 * * * sun,mon,tue,thu,sat</br>0 0-9,12-24 * * wed</br>0 0-2,9-24 * * fri</br>"
 ```
 
 ## Installation
