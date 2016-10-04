@@ -47,18 +47,18 @@
     var start = this.options.startTime
       , end = this.options.endTime
       , interval = this.options.interval
-      , days = this.options.days
       , stringDays = this.options.stringDays
       , html = '';
 
     var dates = generateDates(start, end, interval);
     var daysInAHeader = $.map(dates, function (d, i){
-        return '<th class="time-label">' + hmmAmPm(d) + '</th>'; 
+        return '<th class="time-label">' + hh(d) + '</th>'; 
+        //return '<th class="time-label">' + hmmAmPm(d) + '</th>'; 
     }).join();
     this.$el.find('.schedule-header').html('<tr><th></th>' + daysInAHeader + '</tr>');
     
     var $el = this.$el.find('.schedule-rows');
-    $.each(days, function (_, day){
+    $.each(this.options.days, function (i, day){
         var dayLabel = stringDays[day] || ''; 
         var hoursInARow = $.map(dates, function (d, j){
             var timeLabel = d;
@@ -242,41 +242,14 @@
     });
   };
 
-  DayScheduleSelector.prototype.serializedToCron = function(schedule){
-    var excludes = new Map();
-    $.each(schedule, function(i, d){
-        var stringHour;
-        var stringDay = dayToCronString(i);
-        if (d.length == 0){
-            stringHour = "*";
-        }else{
-            stringHour = '0-';
-            $.each(d, function(j, exclusion){
-                stringHour += (hourToCronHour(exclusion[0])-1) + "," + hourToCronHour(exclusion[1]) + "-";
-            });
-            stringHour += "24";
-        }
-        
-        //put the first part of the cron string in a map to later reduce cronString size
-        var cronString = "0 " + stringHour + " * * ";
-        if (excludes.has(cronString)){
-            excludes.get(cronString).push(i);
-        }else{
-            excludes.set(cronString, [i]);
-        }
-        
-    });
-    
-    var finalString = '';
-    excludes.forEach(function (v, k, m){
-        finalString += k + $.map(v, function (e, _){
-            return dayToCronString(e);
-        }).join(",") + "</br>";
-
-    });
-    
-    return finalString;
+  DayScheduleSelector.prototype.unselect = function () {
+    var plugin = this, i;
+    var $slots = plugin.$el.find('.time-slot');
+    for (i = 0; i < $slots.length; i++) {
+       plugin.deselect($slots.eq(i));
+    }
   };
+
 
   // DayScheduleSelector Plugin Definition
   // =====================================
@@ -344,7 +317,16 @@
       , minutes = date.getMinutes();
     return ('0' + hours).slice(-2) + ':' + ('0' + minutes).slice(-2);
   }
-
+  /**
+   * Convert a Date object to time in HH format
+   * @private
+   * @returns {String} Time in HH format, e.g. '09'
+   */
+ 
+  function hh(date) {
+    var hours = date.getHours()
+    return ('0' + hours).slice(-2);
+  }
   function hhmmToSecondsSinceMidnight(hhmm) {
     var h = hhmm.split(':')[0]
       , m = hhmm.split(':')[1];
@@ -360,6 +342,45 @@
     return ('0' + Math.floor(minutes / 60)).slice(-2) + ':' +
            ('0' + (minutes % 60)).slice(-2);
   }
+
+  function serializedToCron(schedule){
+    if (undefined === schedule || !$.isPlainObject(schedule))
+        return '';
+
+    var excludes = new Map();
+    $.each(schedule, function(i, d){
+        var stringHour;
+        var stringDay = dayToCronString(i);
+        if (d.length == 0 || !$.isArray(d)){
+            stringHour = "*";
+        }else{
+            stringHour = '0-';
+            $.each(d, function(j, exclusion){
+                stringHour += (hourToCronHour(exclusion[0])-1) + "," + hourToCronHour(exclusion[1]) + "-";
+            });
+            stringHour += "24";
+        }
+        
+        //put the first part of the cron string in a map to later reduce cronString size
+        var cronString = "0 " + stringHour + " * * ";
+        if (excludes.has(cronString)){
+            excludes.get(cronString).push(i);
+        }else{
+            excludes.set(cronString, [i]);
+        }
+        
+    });
+    
+    var finalString = '';
+    excludes.forEach(function (v, k, m){
+        finalString += k + $.map(v, function (e, _){
+            return dayToCronString(e);
+        }).join(",") + "</br>";
+
+    });
+    
+    return finalString;
+  };
 
     /**
       * Returns for a given hour
@@ -385,7 +406,8 @@
   // Expose some utility functions
   window.DayScheduleSelector = {
     ssmToHhmm: secondsSinceMidnightToHhmm,
-    hhmmToSsm: hhmmToSecondsSinceMidnight
+    hhmmToSsm: hhmmToSecondsSinceMidnight,
+    serializedToCron: serializedToCron
   };
 
 })(jQuery);
